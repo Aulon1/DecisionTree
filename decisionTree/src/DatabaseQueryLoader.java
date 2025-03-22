@@ -116,12 +116,11 @@ public class DatabaseQueryLoader {
         String selectLaptops = "SELECT id, price,processorName,baseClockSpeed,turboClockSpeed,ssd,storage," +
                 "ExpandableMemory,ram,ramType,dedicatedGraphicMemoryCapacity,gpuName,batteryBackup,touchScreen," +
                 "ScreenSize,weight,refreshRate,screenResolution,userRating FROM laptops WHERE available = 1 "+where;
-
+        System.out.println(selectLaptops);
         try (PreparedStatement preparedStatement = connection.prepareStatement(selectLaptops);
              ResultSet resultSet = preparedStatement.executeQuery()) {
             int i=0;
-            Laptops[] laptops = new Laptops[50];
-
+            List<Laptops> laptops = new ArrayList<>();
             // Iterate through the result set and retrieve laptops
             while (resultSet.next()) {
                 String processorName= resultSet.getString("processorName");
@@ -144,11 +143,11 @@ public class DatabaseQueryLoader {
                 double weight=resultSet.getDouble("weight");
                 double userRating=resultSet.getDouble("userRating");
 
-                laptops[i]=new Laptops(id,processorName,ramType,gpuName,price,ssd,storage,ExpandableMemory,ram,
-                        dedicatedGraphicMemoryCapacity,touchScreen,refreshRate,screenResolution,turboClockSpeed,batteryBackup,weight,ScreenSize,baseClockSpeed,userRating);
+                laptops.add(new Laptops(id,processorName,ramType,gpuName,price,ssd,storage,ExpandableMemory,ram,
+                        dedicatedGraphicMemoryCapacity,touchScreen,refreshRate,screenResolution,turboClockSpeed,batteryBackup,weight,ScreenSize,baseClockSpeed,userRating));
                 i++;
             }
-            return laptops;
+            return laptops.toArray(new Laptops[0]);
         }
     }
 

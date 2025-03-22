@@ -2,126 +2,179 @@ import weka.classifiers.trees.M5P;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 
-import java.io.IOException;
-import java.sql.SQLException;
+import javax.swing.*;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Minimax {
-    static String boldText = "\033[1m";
-    static String reset = "\033[0m";
 
-
-    public static void assignScores(Laptops[] laptops) {
-        // Scoring function: Combine evaluation and inverse of price
+    public static void assignScores(Laptops[] laptops, String priceOptions, String options,JTextField maxPriceUser) {
+        boolean includePrice = "Include".equals(priceOptions);
+        System.out.println(priceOptions);
+        System.out.println(options);
         for (Laptops laptop : laptops) {
-            laptop.setScores((laptop.getRamStorageCpuEvaluation()+laptop.getGpuResolutionScreenSize()+laptop.getBateryWeightUserRating())/3
-                    - (laptop.getPrice()/1000));
-        }
-        if(laptops.length!=0) {
-            double score = laptops[0].getScores();
-            for (int i = 1; i < laptops.length; i++) {
+            double baseScore;
 
-                if (laptops[i].getScores() > score) {
-                    score = laptops[i].getScores();
-                }
+            switch (options) {
+                case "OnlyRamStorageCpu":
+                    //System.out.println("ramonly");
+                    baseScore = laptop.getRamStorageCpuEvaluation();
+                    break;
+                case "GpuResolutionScreenSize":
+                   // System.out.println("gpu");
+                    baseScore = laptop.getGpuResolutionScreenSize();
+                    break;
+                case "BatteryWeightRating":
+                   // System.out.println("battery");
+                    baseScore = laptop.getBateryWeightUserRating();
+                    break;
+                default:
+                    //System.out.println("all");
+                    baseScore = (laptop.getRamStorageCpuEvaluation() +
+                            laptop.getGpuResolutionScreenSize() +
+                            laptop.getBateryWeightUserRating()) / 3;
+                    break;
             }
 
-        }
-        Arrays.sort(laptops, Comparator.comparingDouble(Laptops::getScores).reversed());
+            if (includePrice) {
+                double minPrice = 177;
+                double maxPrice= Math.min(Double.parseDouble(maxPriceUser.getText()),4444.0);
+                double normalizedPrice = (Math.log(laptop.getPrice()) - Math.log(minPrice)) /
+                        (Math.log(maxPrice) - Math.log(minPrice));
+                baseScore -= normalizedPrice * 2.0;
+            }
 
+            laptop.setScores(baseScore);
+        }
+
+        Arrays.sort(laptops, Comparator.comparingDouble(Laptops::getScores).reversed());
+    }
+    public static JFrame showLaptopDetails(Laptops laptop) {
+        JFrame detailFrame = new JFrame("Laptop Details");
+        detailFrame.setSize(400, 600);
+        JTextArea detailArea = new JTextArea();
+        detailArea.setEditable(false);
+        detailArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        detailArea.append("Score: " + laptop.getScores() + "\n");
+        detailArea.append("Processor: " + laptop.getProcessorName() + "\n");
+        detailArea.append("Base Clock Speed: " + laptop.getBaseClockSpeed() + " GHz\n");
+        detailArea.append("Turbo Clock Speed: " + laptop.getTurboClockSpeed() + " GHz\n");
+        detailArea.append("RAM Type: " + laptop.getRamType() + "\n");
+        detailArea.append("RAM: " + laptop.getRam() + " GB\n");
+        detailArea.append("Storage: " + laptop.getStorage() + " GB\n");
+        detailArea.append("SSD: " + (laptop.getSsd() == 1 ? "Yes" : "No") + "\n");
+        detailArea.append("GPU: " + laptop.getGpuName() + "\n");
+        detailArea.append("Dedicated GPU Memory: " + laptop.getDedicatedGraphicMemoryCapacity() + " GB\n");
+        detailArea.append("Screen Size: " + laptop.getScreenSize() + " inches\n");
+        detailArea.append("Screen Resolution: " + laptop.getScreenResolution() + "p\n");
+        detailArea.append("Refresh Rate: " + laptop.getRefreshRate() + " Hz\n");
+        detailArea.append("Weight: " + laptop.getWeight() + " kg\n");
+        detailArea.append("Battery Backup: " + laptop.getBatteryBackup() + " hours\n");
+        detailArea.append("Price: $" + laptop.getPrice() + "\n\n");
+
+        detailFrame.add(new JScrollPane(detailArea));
+        detailFrame.setVisible(true);
+        return detailFrame;
     }
 
-    public static void findBestLaptops(DatabaseQueryLoader databaseQueryLoader, M5P regressionTree,
-                                       RegressionTreeBuilder regressionTreeBuilder, RandomForest randomForest,
-                                       RandomForestBuilder randomForestBuilder,Instances[] queries) throws Exception {
 
-        String whereCondition= getLaptopSpecifics();
+    public static Laptops[] findBestLaptops(DatabaseQueryLoader databaseQueryLoader,
+                                            RegressionTreeBuilder regressionTreeBuilder,
+                                            RandomForestBuilder randomForestBuilder,
+                                            Instances[] queries,
+                                            JTextField priceField, JComboBox<String> ramTypeField, JTextField ramField, JComboBox<String> ssdField,
+                                            JTextField storageField, JTextField graphicMemoryField, JComboBox<String> screenSizeField,
+                                            JComboBox<String> options,JComboBox<String> priceOptions ) throws Exception {
+
+        // Step 1: Get where condition based on user input
+        String whereCondition = getLaptopSpecifics(priceField, ramTypeField, ramField, ssdField, storageField, graphicMemoryField, screenSizeField);
+        // Step 2: Fetch laptops from the database using the specified conditions
         Laptops[] laptops = databaseQueryLoader.getLaptopsFromDatabase(whereCondition);
-        laptops = removeNullLaptops(laptops);
-        Instances[] filteredInstances= databaseQueryLoader.loadFilteredQuery(whereCondition);
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY1],false);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY1],queries[Constant.TESTQUERY1],false);
-        Double[] ramStorageCpuEvaluationValues=TestTrees.evaluate(regressionTree,randomForest,filteredInstances[Constant.TESTQUERY1]);
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY2],false);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY2],queries[Constant.TESTQUERY2],false);
-        Double[] gpuResolutionScreenSizeValues=TestTrees.evaluate(regressionTree,randomForest,filteredInstances[Constant.TESTQUERY2]);
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY3],false);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY3],queries[Constant.TESTQUERY3],false);
-        Double[] batteryWeightUserRatingValues=TestTrees.evaluate(regressionTree,randomForest,filteredInstances[Constant.TESTQUERY3]);
-
+        laptops = removeNullLaptops(laptops);  // Remove null entries
+        // Step 3: Load filtered instances based on the where condition for further evaluation
+        Instances[] filteredInstances = databaseQueryLoader.loadFilteredQuery(whereCondition);
+        // Step 4: Evaluate laptops using M5P regression tree and RandomForest for each aspect
+        // RAM, Storage, CPU Evaluation
+        M5P regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY1]);
+        RandomForest randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY1]);
+        Double[] ramStorageCpuEvaluationValues = TestTrees.evaluate(regressionTree, randomForest, filteredInstances[Constant.TESTQUERY1]);
+        // GPU, Resolution, Screen Size Evaluation
+        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY2]);
+        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY2]);
+        Double[] gpuResolutionScreenSizeValues = TestTrees.evaluate(regressionTree, randomForest, filteredInstances[Constant.TESTQUERY2]);
+        // Battery, Weight Evaluation
+        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY3]);
+        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY3]);
+        Double[] batteryWeightUserRatingValues = TestTrees.evaluate(regressionTree, randomForest, filteredInstances[Constant.TESTQUERY3]);
+        // Step 5: Assign evaluation values to the corresponding laptops
         for (int i = 0; i < laptops.length; i++) {
             laptops[i].setRamStorageCpuEvaluation(ramStorageCpuEvaluationValues[i]);
             laptops[i].setGpuResolutionScreenSize(gpuResolutionScreenSizeValues[i]);
-            laptops[i].setBatteryBackup(batteryWeightUserRatingValues[i]);
+            laptops[i].setBateryWeightUserRating(batteryWeightUserRatingValues[i]);
+        }
+        // Step 6: Assign scores and sort laptops
+        assignScores(laptops,(String) priceOptions.getSelectedItem(),(String) options.getSelectedItem(),priceField);
+
+        // Step 7: Return the top laptops (sorted by scores)
+        Arrays.sort(laptops, Comparator.comparingDouble(Laptops::getScores).reversed());
+        return laptops;
+    }
+
+    private static String getLaptopSpecifics(JTextField priceField, JComboBox<String> ramTypeField, JTextField ramField, JComboBox<String> ssdField,
+                                             JTextField storageField, JTextField graphicMemoryField, JComboBox<String> screenSizeField) {
+        StringBuilder whereClause = new StringBuilder("");
+
+        String price = priceField.getText();
+        if (!price.isEmpty()) {
+            whereClause.append(" AND price < ").append(price);
         }
 
-        Minimax.assignScores(laptops);
-        double score=laptops[0].getScores();
-        int x=0;
-        for (int i = 0; i < laptops.length; i++) {
-            if(laptops[i].getScores()>score-1 && laptops[i].getScores()<score+1)
-            {
-                if(x<7){
-                    x=x+1;
-                    System.out.println(boldText+laptops[i]+"\n"+reset);
-                }
-            }
+        String ramType = (String) ramTypeField.getSelectedItem();
+        if (ramType != null && !ramType.isEmpty()) {
+            whereClause.append(" AND ramType = '").append(ramType).append("'");
         }
+
+        String ram = ramField.getText();
+        if (!ram.isEmpty()) {
+            whereClause.append(" AND ram >= ").append(ram);
+        }
+
+        String ssd = (String) ssdField.getSelectedItem();
+        if (ssd != null && !ssd.isEmpty()) {
+            whereClause.append(" AND ssd = ").append(ssd);
+        }
+
+        String storage = storageField.getText();
+        if (!storage.isEmpty()) {
+            whereClause.append(" AND storage >= ").append(storage);
+        }
+
+        String dedicatedGraphicMemory = graphicMemoryField.getText();
+        if (!dedicatedGraphicMemory.isEmpty()) {
+            whereClause.append(" AND dedicatedGraphicMemoryCapacity >= ").append(dedicatedGraphicMemory);
+        }
+
+        String screenSize = (String) screenSizeField.getSelectedItem();
+        if (screenSize != null && !screenSize.isEmpty()) {
+            whereClause.append(" AND screenSize = ").append(screenSize);
+        }
+
+        whereClause.append(" ORDER BY id");
+
+        return whereClause.toString();
     }
-    private static String getLaptopSpecifics() throws InterruptedException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println(boldText+"Write the maximum price you would pay for a laptop"+reset);
-        int inputPrice = scanner.nextInt();
-        String where="and price < "+inputPrice;
-        StringBuilder stringBuilder= new StringBuilder(where);
-        System.out.println(boldText+"Write a minimum value for the next specification or press enter if you don't want to specify\n"+reset);
-        Thread.sleep(500);
-        System.out.println(boldText+"RamType: lpddr5 or unified memory or ddr5 or lpddr4x or lpddr4 or ddr4 or lpddr3 or ddr3 "+reset);
-        scanner.nextLine();
-        String ramType = scanner.nextLine();
-        if(!ramType.isEmpty()){
-            stringBuilder.append(" and ramType =\""+ramType+"\"");
-        }
-        System.out.println(boldText+"Ram in GB "+reset);
-        String ram= scanner.nextLine();
-        if(!ram.isEmpty()){
-            stringBuilder.append(" and ram>="+ram);
-        }
-        System.out.println(boldText+"1 for SSD 0 for HDD "+reset);
-        String ssd = scanner.nextLine();
-        if(!ssd.isEmpty()){
-            stringBuilder.append(" and ssd >="+ssd);
-        }
-        System.out.println(boldText+"Minimum storage in GB "+reset);
-        String storage = scanner.nextLine();
-        if(!storage.isEmpty()){
-            stringBuilder.append(" and storage >="+ssd);
-        }
-        System.out.println(boldText+"DedicatedGraphicMemoryCapacity in GB "+reset);
-        String dedicatedGraphicMemoryCapacity = scanner.nextLine();
-        if(!dedicatedGraphicMemoryCapacity.isEmpty()){
-            stringBuilder.append(" and dedicatedGraphicMemoryCapacity >="+dedicatedGraphicMemoryCapacity);
-        }
-        System.out.println(boldText+"Screen size in inch 11.6 || 12.4 || 13.3 || 14 || 15.6 || 16 || 17.3 "+reset);
-        String ScreenSize = scanner.nextLine();
-        if(!ScreenSize.isEmpty()){
-            stringBuilder.append(boldText+" and ScreenSize ="+ScreenSize);
-        }
-        stringBuilder.append(" order by id");
-        where=stringBuilder.toString();
-        System.out.println(boldText+"Processing...\n"+reset);
-        return where;
-    }
+
     private static Laptops[] removeNullLaptops(Laptops[] laptops) {
         List<Laptops> nonNullLaptops = new ArrayList<>();
-
-        // Copy non-null laptops to the list
         for (Laptops laptop : laptops) {
             if (laptop != null) {
                 nonNullLaptops.add(laptop);
             }
         }
-
         return nonNullLaptops.toArray(new Laptops[0]);
     }
 }
+
+

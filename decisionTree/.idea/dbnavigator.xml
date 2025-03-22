@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -24,13 +24,6 @@
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />
-  </component>
-  <component name="DBNavigator.Project.FileConnectionMappingManager">
-    <mapping file-url="file://$PROJECT_DIR$/src/queries/testQuery2.sql" connection-id="dea8a09e-f53c-4f46-a8f1-0e9df15c76d0" session-id="MAIN" current-schema="laptopdataset" />
-    <mapping file-url="file://$PROJECT_DIR$/src/queries/trainQuery3.sql" connection-id="virtual-mysql-connection" session-id="" current-schema="" />
-    <mapping file-url="file://$PROJECT_DIR$/src/queries/testQuery1.sql" connection-id="dea8a09e-f53c-4f46-a8f1-0e9df15c76d0" session-id="MAIN" current-schema="laptopdataset" />
-    <mapping file-url="file://$PROJECT_DIR$/src/queries/testQuery3.sql" connection-id="dea8a09e-f53c-4f46-a8f1-0e9df15c76d0" session-id="MAIN" current-schema="laptopdataset" />
-    <mapping file-url="file://$PROJECT_DIR$/src/queries/trainQuery1.sql" connection-id="dea8a09e-f53c-4f46-a8f1-0e9df15c76d0" session-id="MAIN" current-schema="laptopdataset" />
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />

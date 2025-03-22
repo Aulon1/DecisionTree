@@ -1,37 +1,18 @@
 import weka.classifiers.trees.M5P;
-import weka.classifiers.trees.RandomForest;
 import weka.gui.treevisualizer.PlaceNode2;
 import weka.gui.treevisualizer.TreeVisualizer;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 public class VisualiseTree {
 
-    public void visualiseRegressionTree(M5P regressionTree) throws Exception {
+    public void visualiseRegressionTreeInPanel(M5P regressionTree, JPanel panel) throws Exception {
         TreeVisualizer tv = new TreeVisualizer(null, regressionTree.graph(), new PlaceNode2());
-        JFrame jf = new JFrame("M5P Regression Tree Visualization");
-        jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        jf.setSize(screenSize);
-        jf.add(tv,BorderLayout.CENTER);
-        jf.setAutoRequestFocus(true);
-
-//        jf.addWindowListener(new WindowAdapter() {
-//            @Override
-//            public void windowClosing(WindowEvent e) {
-//                super.windowClosing(e);
-//                jf.setVisible(false); // Hide the JFrame instead of exiting
-//            }
-//        });
-        jf.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        panel.add(tv, BorderLayout.CENTER);
         SwingUtilities.invokeLater(() -> {
-            jf.setVisible(true);
+            panel.revalidate();
+            panel.repaint();
+            tv.fitToScreen();
         });
-
-        jf.requestFocus();
-
     }
 }

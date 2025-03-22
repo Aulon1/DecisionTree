@@ -2,35 +2,31 @@ import weka.classifiers.trees.M5P;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 
+import javax.swing.*;
+
 public class Statistics {
 
+        public static void printStatistics(M5P regressionTree, RegressionTreeBuilder regressionTreeBuilder,
+                                           RandomForest randomForest, RandomForestBuilder randomForestBuilder,
+                                           Instances[] queries, JPanel[] outputPanels) throws Exception {
 
-    static String boldText = "\033[1m";
-    static String reset = "\033[0m";
+            // Panel for the first query: RamStorageCpuEvaluation
+            regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY1]);
+            randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY1]);
+            outputPanels[0].setBorder(BorderFactory.createTitledBorder("RamStorageCpuEvaluation Statistics"));
+            TestTrees.testTree(regressionTree, randomForest, queries[Constant.TRAINQUERY1], queries[Constant.TESTQUERY1], outputPanels[0]);
 
-    public static void printStatistics
-            (M5P regressionTree, RegressionTreeBuilder regressionTreeBuilder,
-             RandomForest randomForest, RandomForestBuilder randomForestBuilder,
-             Instances queries[]) throws Exception {
+            // Panel for the second query: GpuResolutionScreenSize
+            regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY2]);
+            randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY2]);
+            outputPanels[1].setBorder(BorderFactory.createTitledBorder("GpuResolutionScreenSize Statistics"));
+            TestTrees.testTree(regressionTree, randomForest, queries[Constant.TRAINQUERY2], queries[Constant.TESTQUERY2], outputPanels[1]);
 
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY1],true);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY1],queries[Constant.TESTQUERY1],true);
-        System.out.println(boldText+"RamStorageCpuEvaluation statistics\n"+reset);
-        TestTrees.testTree(regressionTree,randomForest,queries[Constant.TRAINQUERY1],queries[Constant.TESTQUERY1]);
-
-        System.out.println(boldText+"\n -----------------------------------------------"+reset);
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY2],true);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY2],queries[Constant.TESTQUERY2],true);
-        System.out.println(boldText+"GpuResolutionScreenSize statistics\n"+reset);
-        TestTrees.testTree(regressionTree,randomForest,queries[Constant.TRAINQUERY2],queries[Constant.TESTQUERY2]);
-
-        System.out.println(boldText+"\n -----------------------------------------------"+reset);
-        regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY3],true);
-        randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY3],queries[Constant.TESTQUERY3],true);
-        System.out.println(boldText+"BatteryWeightUserRating statistics\n"+reset);
-        TestTrees.testTree(regressionTree,randomForest,queries[Constant.TRAINQUERY3],queries[Constant.TESTQUERY3]);
-
-        System.out.println(boldText+"\n -----------------------------------------------"+reset);
-
+            // Panel for the third query: BatteryWeightUserRating
+            regressionTree = regressionTreeBuilder.trainRegressionTree(queries[Constant.TRAINQUERY3]);
+            randomForest = randomForestBuilder.trainRandomForest(queries[Constant.TRAINQUERY3]);
+            outputPanels[2].setBorder(BorderFactory.createTitledBorder("BatteryWeightUserRating Statistics"));
+            TestTrees.testTree(regressionTree, randomForest, queries[Constant.TRAINQUERY3], queries[Constant.TESTQUERY3], outputPanels[2]);
+        }
     }
-}
+
